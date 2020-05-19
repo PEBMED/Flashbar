@@ -8,6 +8,7 @@ import android.os.Build
 import android.util.DisplayMetrics
 import android.view.*
 import android.view.Surface.*
+import androidx.fragment.app.Fragment
 import com.andrognito.flashbar.util.NavigationBarPosition.*
 import java.lang.reflect.InvocationTargetException
 import kotlin.math.roundToInt
@@ -26,8 +27,30 @@ internal fun Activity.getStatusBarHeightInPx(): Int {
     }
 }
 
+internal fun Fragment.getStatusBarHeightInPx(): Int {
+    val rectangle = Rect()
+
+    activity?.window?.decorView?.getWindowVisibleDisplayFrame(rectangle)
+
+    val statusBarHeight = rectangle.top
+    val contentViewTop = activity?.window?.findViewById<View>(Window.ID_ANDROID_CONTENT)?.top ?: 0
+    return if (contentViewTop == 0) { //Actionbar is not present
+        statusBarHeight
+    } else {
+        contentViewTop - statusBarHeight
+    }
+}
+
 internal fun Activity.getNavigationBarPosition(): NavigationBarPosition {
-    return when (windowManager.defaultDisplay.rotation) {
+    return getNavigationBarPosition(windowManager.defaultDisplay.rotation)
+}
+
+internal fun Fragment.getNavigationBarPosition(): NavigationBarPosition {
+    return getNavigationBarPosition(activity?.windowManager?.defaultDisplay?.rotation)
+}
+
+private fun getNavigationBarPosition(rotation: Int?): NavigationBarPosition {
+    return when (rotation) {
         ROTATION_0 -> BOTTOM
         ROTATION_90 -> RIGHT
         ROTATION_270 -> LEFT
@@ -40,6 +63,18 @@ internal fun Activity.getNavigationBarSizeInPx(): Int {
     val appUsableScreenSize = getAppUsableScreenSize()
     val navigationBarPosition = getNavigationBarPosition()
 
+    return getNavigationBarSizeInPx(realScreenSize, appUsableScreenSize, navigationBarPosition)
+}
+
+internal fun Fragment.getNavigationBarSizeInPx(): Int {
+    val realScreenSize = getRealScreenSize()
+    val appUsableScreenSize = getAppUsableScreenSize()
+    val navigationBarPosition = getNavigationBarPosition()
+
+    return getNavigationBarSizeInPx(realScreenSize, appUsableScreenSize, navigationBarPosition)
+}
+
+private fun getNavigationBarSizeInPx(realScreenSize: Point, appUsableScreenSize: Point, navigationBarPosition: NavigationBarPosition): Int {
     return if (navigationBarPosition == LEFT || navigationBarPosition == RIGHT) {
         realScreenSize.x - appUsableScreenSize.x
     } else {
@@ -54,6 +89,13 @@ internal fun Activity?.getRootView(): ViewGroup? {
     return window.decorView as ViewGroup
 }
 
+internal fun Fragment?.getRootView(): ViewGroup? {
+    if (this == null || activity?.window?.decorView == null) {
+        return null
+    }
+    return activity?.window?.decorView as ViewGroup
+}
+
 internal fun Context.convertDpToPx(dp: Int): Int {
     return (dp * (resources.displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT)).roundToInt()
 }
@@ -63,16 +105,22 @@ internal fun Context.convertPxToDp(px: Int): Int {
 }
 
 private fun Activity.getRealScreenSize(): Point {
-    val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-    val defaultDisplay = windowManager.defaultDisplay
+    return getRealScreenSize(windowManager.defaultDisplay)
+}
+
+private fun Fragment.getRealScreenSize(): Point {
+    return getRealScreenSize(activity?.windowManager?.defaultDisplay)
+}
+
+private fun getRealScreenSize(display: Display?): Point {
     val size = Point()
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-        defaultDisplay.getRealSize(size)
+        display?.getRealSize(size)
     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
         try {
-            size.x = Display::class.java.getMethod("getRawWidth").invoke(defaultDisplay) as Int
-            size.y = Display::class.java.getMethod("getRawHeight").invoke(defaultDisplay) as Int
+            size.x = Display::class.java.getMethod("getRawWidth").invoke(display) as Int
+            size.y = Display::class.java.getMethod("getRawHeight").invoke(display) as Int
         } catch (e: IllegalAccessException) {
         } catch (e: InvocationTargetException) {
         } catch (e: NoSuchMethodException) {
@@ -82,10 +130,16 @@ private fun Activity.getRealScreenSize(): Point {
 }
 
 private fun Activity.getAppUsableScreenSize(): Point {
-    val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-    val defaultDisplay = windowManager.defaultDisplay
+    return getAppUsableScreenSize(windowManager.defaultDisplay)
+}
+
+private fun Fragment.getAppUsableScreenSize(): Point {
+    return getAppUsableScreenSize(activity?.windowManager?.defaultDisplay)
+}
+
+private fun getAppUsableScreenSize(display: Display?): Point {
     val size = Point()
-    defaultDisplay.getSize(size)
+    display?.getSize(size)
     return size
 }
 

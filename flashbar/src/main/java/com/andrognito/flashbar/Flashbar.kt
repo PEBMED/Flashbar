@@ -1,6 +1,7 @@
 package com.andrognito.flashbar
 
 import android.app.Activity
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.PorterDuff
 import android.graphics.Typeface
@@ -10,11 +11,13 @@ import androidx.core.content.ContextCompat
 import android.text.Spanned
 import android.widget.ImageView.ScaleType
 import android.widget.ImageView.ScaleType.CENTER_CROP
+import androidx.fragment.app.Fragment
 import com.andrognito.flashbar.Flashbar.Gravity.BOTTOM
 import com.andrognito.flashbar.Flashbar.Gravity.TOP
 import com.andrognito.flashbar.anim.FlashAnim
 import com.andrognito.flashbar.anim.FlashAnimBarBuilder
 import com.andrognito.flashbar.anim.FlashAnimIconBuilder
+import java.lang.RuntimeException
 
 private const val DEFAULT_SHADOW_STRENGTH = 4
 private const val DEFAUT_ICON_SCALE = 1.0f
@@ -27,8 +30,17 @@ class Flashbar private constructor(private var builder: Builder) {
     /**
      * Shows a flashbar
      */
+    @Throws(RuntimeException::class)
     fun show() {
-        flashbarContainerView.show(builder.activity)
+        when {
+            builder.activity != null -> {
+                flashbarContainerView.show(builder.activity!!)
+            }
+            builder.fragment != null -> {
+                flashbarContainerView.show(builder.fragment!!)
+            }
+            else -> RuntimeException("Needs to init Activity or Fragment")
+        }
     }
 
     /**
@@ -50,14 +62,36 @@ class Flashbar private constructor(private var builder: Builder) {
      */
     fun isShown() = flashbarContainerView.isBarShown()
 
+    @Throws(RuntimeException::class)
     private fun construct() {
-        flashbarContainerView = FlashbarContainerView(builder.activity)
-        flashbarContainerView.adjustOrientation(builder.activity)
+        flashbarContainerView = FlashbarContainerView(builder.context)
+
+        when {
+            builder.activity != null -> {
+                flashbarContainerView.adjustOrientation(builder.activity!!)
+            }
+            builder.fragment != null -> {
+                flashbarContainerView.adjustOrientation(builder.fragment!!)
+            }
+            else -> RuntimeException("Needs to init Activity or Fragment")
+        }
+
         flashbarContainerView.addParent(this)
 
-        flashbarView = FlashbarView(builder.activity)
-        flashbarView.init(builder.gravity, builder.castShadow, builder.shadowStrength!!)
-        flashbarView.adjustWitPositionAndOrientation(builder.activity, builder.gravity)
+        flashbarView = FlashbarView(builder.context)
+        flashbarView.init(builder.gravity, builder.castShadow, builder.shadowStrength)
+
+        when {
+            builder.activity != null -> {
+                flashbarView.adjustWitPositionAndOrientation(builder.activity!!, builder.gravity)
+            }
+            builder.fragment != null -> {
+                flashbarView.adjustWitPositionAndOrientation(builder.fragment!!, builder.gravity)
+            }
+            else -> RuntimeException("Needs to init Activity or Fragment")
+        }
+
+
         flashbarView.addParent(flashbarContainerView)
 
         flashbarContainerView.attach(flashbarView)
@@ -147,7 +181,18 @@ class Flashbar private constructor(private var builder: Builder) {
         }
     }
 
-    class Builder(internal var activity: Activity) {
+    class Builder(internal val activity: Activity? = null, internal val fragment: Fragment? = null) {
+
+        lateinit var context: Context
+
+        init {
+            if (activity != null) {
+                context = activity
+            } else if (fragment != null) {
+                context = fragment.requireContext()
+            }
+        }
+
         internal var gravity: Gravity = BOTTOM
         internal var backgroundColor: Int? = null
         internal var backgroundDrawable: Drawable? = null
@@ -158,7 +203,7 @@ class Flashbar private constructor(private var builder: Builder) {
         internal var barDismissOnTapOutside: Boolean = false
         internal var onTapOutsideListener: OnTapListener? = null
         internal var overlay: Boolean = false
-        internal var overlayColor: Int = ContextCompat.getColor(activity, R.color.modal)
+        internal var overlayColor: Int = ContextCompat.getColor(context, R.color.modal)
         internal var overlayBlockable: Boolean = false
         internal var castShadow: Boolean = true
         internal var shadowStrength: Int = DEFAULT_SHADOW_STRENGTH
@@ -238,7 +283,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the background drawable resource of the flashbar
          */
         fun backgroundDrawable(@DrawableRes drawableId: Int) = apply {
-            this.backgroundDrawable = ContextCompat.getDrawable(activity, drawableId)
+            this.backgroundDrawable = ContextCompat.getDrawable(context, drawableId)
         }
 
         /**
@@ -250,7 +295,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the background color resource of the flashbar
          */
         fun backgroundColorRes(@ColorRes colorId: Int) = apply {
-            this.backgroundColor = ContextCompat.getColor(activity, colorId)
+            this.backgroundColor = ContextCompat.getColor(context, colorId)
         }
 
         /**
@@ -312,7 +357,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Modal overlay is automatically shown if color is set
          */
         fun overlayColorRes(@ColorRes colorId: Int) = apply {
-            this.overlayColor = ContextCompat.getColor(activity, colorId)
+            this.overlayColor = ContextCompat.getColor(context, colorId)
         }
 
         /**
@@ -370,7 +415,7 @@ class Flashbar private constructor(private var builder: Builder) {
         /**
          * Specifies the title string res
          */
-        fun title(@StringRes titleId: Int) = apply { this.title = activity.getString(titleId) }
+        fun title(@StringRes titleId: Int) = apply { this.title = context.getString(titleId) }
 
         /**
          * Specifies the title span
@@ -401,7 +446,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the title color resource
          */
         fun titleColorRes(@ColorRes colorId: Int) = apply {
-            this.titleColor = ContextCompat.getColor(activity, colorId)
+            this.titleColor = ContextCompat.getColor(context, colorId)
         }
 
         /**
@@ -420,7 +465,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the message string resource
          */
         fun message(@StringRes messageId: Int) = apply {
-            this.message = activity.getString(messageId)
+            this.message = context.getString(messageId)
         }
 
         /**
@@ -452,7 +497,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the message color resource
          */
         fun messageColorRes(@ColorRes colorId: Int) = apply {
-            this.messageColor = ContextCompat.getColor(activity, colorId)
+            this.messageColor = ContextCompat.getColor(context, colorId)
         }
 
         /**
@@ -475,7 +520,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the primary action text string resource
          */
         fun primaryActionText(@StringRes actionTextId: Int) = apply {
-            primaryActionText(activity.getString(actionTextId))
+            primaryActionText(context.getString(actionTextId))
         }
 
         /**
@@ -507,7 +552,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the primary action text color resource
          */
         fun primaryActionTextColorRes(@ColorRes colorId: Int) = apply {
-            this.primaryActionTextColor = ContextCompat.getColor(activity, colorId)
+            this.primaryActionTextColor = ContextCompat.getColor(context, colorId)
         }
 
         /**
@@ -535,7 +580,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the positive action text string resource
          */
         fun positiveActionText(@StringRes actionTextId: Int) = apply {
-            positiveActionText(activity.getString(actionTextId))
+            positiveActionText(context.getString(actionTextId))
         }
 
         /**
@@ -567,7 +612,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the positive action text color resource
          */
         fun positiveActionTextColorRes(@ColorRes colorId: Int) = apply {
-            this.positiveActionTextColor = ContextCompat.getColor(activity, colorId)
+            this.positiveActionTextColor = ContextCompat.getColor(context, colorId)
         }
 
         /**
@@ -595,7 +640,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the negative action text string resource
          */
         fun negativeActionText(@StringRes actionTextId: Int) = apply {
-            negativeActionText(activity.getString(actionTextId))
+            negativeActionText(context.getString(actionTextId))
         }
 
         /**
@@ -627,7 +672,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the negative action text color resource
          */
         fun negativeActionTextColorRes(@ColorRes colorId: Int) = apply {
-            this.negativeActionTextColor = ContextCompat.getColor(activity, colorId)
+            this.negativeActionTextColor = ContextCompat.getColor(context, colorId)
         }
 
         /**
@@ -668,7 +713,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the icon drawable resource
          */
         fun icon(@DrawableRes iconId: Int) = apply {
-            this.iconDrawable = ContextCompat.getDrawable(activity, iconId)
+            this.iconDrawable = ContextCompat.getDrawable(context, iconId)
         }
 
         /**
@@ -690,7 +735,7 @@ class Flashbar private constructor(private var builder: Builder) {
          */
         @JvmOverloads
         fun iconColorFilterRes(@ColorRes colorId: Int, mode: PorterDuff.Mode? = null) = apply {
-            this.iconColorFilter = ContextCompat.getColor(activity, colorId)
+            this.iconColorFilter = ContextCompat.getColor(context, colorId)
             this.iconColorFilterMode = mode
         }
 
@@ -725,7 +770,7 @@ class Flashbar private constructor(private var builder: Builder) {
          * Specifies the indeterminate progress tint resource
          */
         fun progressTintRes(@ColorRes colorId: Int) = apply {
-            this.progressTint = ContextCompat.getColor(activity, colorId)
+            this.progressTint = ContextCompat.getColor(context, colorId)
         }
 
         /**
@@ -746,8 +791,8 @@ class Flashbar private constructor(private var builder: Builder) {
         private fun configureAnimation() {
             enterAnimBuilder = if (enterAnimBuilder == null) {
                 when (gravity) {
-                    TOP -> FlashAnim.with(activity).animateBar().enter().fromTop()
-                    BOTTOM -> FlashAnim.with(activity).animateBar().enter().fromBottom()
+                    TOP -> FlashAnim.with(context).animateBar().enter().fromTop()
+                    BOTTOM -> FlashAnim.with(context).animateBar().enter().fromBottom()
                 }
             } else {
                 when (gravity) {
@@ -758,8 +803,8 @@ class Flashbar private constructor(private var builder: Builder) {
 
             exitAnimBuilder = if (exitAnimBuilder == null) {
                 when (gravity) {
-                    TOP -> FlashAnim.with(activity).animateBar().exit().fromTop()
-                    BOTTOM -> FlashAnim.with(activity).animateBar().exit().fromBottom()
+                    TOP -> FlashAnim.with(context).animateBar().exit().fromTop()
+                    BOTTOM -> FlashAnim.with(context).animateBar().exit().fromBottom()
                 }
             } else {
                 when (gravity) {

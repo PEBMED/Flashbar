@@ -20,6 +20,7 @@ import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.RelativeLayout.ALIGN_PARENT_BOTTOM
 import android.widget.RelativeLayout.ALIGN_PARENT_TOP
+import androidx.fragment.app.Fragment
 import com.andrognito.flashbar.Flashbar.Gravity
 import com.andrognito.flashbar.Flashbar.Gravity.BOTTOM
 import com.andrognito.flashbar.Flashbar.Gravity.TOP
@@ -87,10 +88,20 @@ internal class FlashbarView(context: Context) : LinearLayout(context) {
         }
     }
 
-    internal fun adjustWitPositionAndOrientation(activity: Activity,
-                                                 gravity: Gravity) {
-        val flashbarViewLp = RelativeLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+    internal fun adjustWitPositionAndOrientation(activity: Activity, gravity: Gravity) {
         val statusBarHeight = activity.getStatusBarHeightInPx()
+
+        adjustWitPositionAndOrientation(statusBarHeight, gravity)
+    }
+
+    internal fun adjustWitPositionAndOrientation(fragment: Fragment, gravity: Gravity) {
+        val statusBarHeight = fragment.getStatusBarHeightInPx()
+
+        adjustWitPositionAndOrientation(statusBarHeight, gravity)
+    }
+
+    private fun adjustWitPositionAndOrientation(statusBarHeight: Int, gravity: Gravity) {
+        val flashbarViewLp = RelativeLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
 
         val flashbarViewContentLp = fbContent.layoutParams as LayoutParams
 

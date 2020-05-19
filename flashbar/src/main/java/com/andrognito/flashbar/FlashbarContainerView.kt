@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.RelativeLayout
+import androidx.fragment.app.Fragment
 import com.andrognito.flashbar.Flashbar.Companion.DURATION_INDEFINITE
 import com.andrognito.flashbar.Flashbar.DismissEvent
 import com.andrognito.flashbar.Flashbar.DismissEvent.*
@@ -18,11 +19,11 @@ import com.andrognito.flashbar.SwipeDismissTouchListener.DismissCallbacks
 import com.andrognito.flashbar.anim.FlashAnim
 import com.andrognito.flashbar.anim.FlashAnimBarBuilder
 import com.andrognito.flashbar.anim.FlashAnimIconBuilder
+import com.andrognito.flashbar.util.*
+import com.andrognito.flashbar.util.NavigationBarPosition
 import com.andrognito.flashbar.util.NavigationBarPosition.*
-import com.andrognito.flashbar.util.afterMeasured
 import com.andrognito.flashbar.util.getNavigationBarPosition
 import com.andrognito.flashbar.util.getNavigationBarSizeInPx
-import com.andrognito.flashbar.util.getRootView
 
 /**
  * Container withView matching the height and width of the parent to hold a FlashbarView.
@@ -121,10 +122,21 @@ internal class FlashbarContainerView(context: Context)
     }
 
     internal fun adjustOrientation(activity: Activity) {
-        val flashbarContainerViewLp = LayoutParams(MATCH_PARENT, MATCH_PARENT)
-
         val navigationBarPosition = activity.getNavigationBarPosition()
         val navigationBarSize = activity.getNavigationBarSizeInPx()
+
+        adjustOrientation(navigationBarPosition, navigationBarSize)
+    }
+
+    internal fun adjustOrientation(fragment: Fragment) {
+        val navigationBarPosition = fragment.getNavigationBarPosition()
+        val navigationBarSize = fragment.getNavigationBarSizeInPx()
+
+        adjustOrientation(navigationBarPosition, navigationBarSize)
+    }
+
+    private fun adjustOrientation(navigationBarPosition: NavigationBarPosition, navigationBarSize: Int) {
+        val flashbarContainerViewLp = LayoutParams(MATCH_PARENT, MATCH_PARENT)
 
         when (navigationBarPosition) {
             LEFT -> flashbarContainerViewLp.leftMargin = navigationBarSize
@@ -135,16 +147,24 @@ internal class FlashbarContainerView(context: Context)
         layoutParams = flashbarContainerViewLp
     }
 
-
     internal fun show(activity: Activity) {
+        showByRootView(activity.getRootView())
+    }
+
+    internal fun show(fragment: Fragment) {
+        showByRootView(fragment.getRootView())
+    }
+
+    private fun showByRootView(rootView: ViewGroup?) {
         if (isBarShowing || isBarShown) return
 
-        val activityRootView = activity.getRootView() ?: return
+//        val activityRootView = activity.getRootView() ?: return
+        if (rootView == null) return
 
         // Only add the withView to the parent once
-        if (this.parent == null) activityRootView.addView(this)
+        if (this.parent == null) rootView.addView(this)
 
-        activityRootView.afterMeasured {
+        rootView.afterMeasured {
             val enterAnim = enterAnimBuilder.withView(flashbarView).build()
             enterAnim.start(object : FlashAnim.InternalAnimListener {
                 override fun onStart() {

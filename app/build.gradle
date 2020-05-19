@@ -19,4 +19,5 @@ dependencies {
 
     implementation "androidx.appcompat:appcompat:$versions.supportVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$versions.kotlin"
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 }
