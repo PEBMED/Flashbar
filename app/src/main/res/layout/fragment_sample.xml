@@ -3,26 +3,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
     android:orientation="vertical"
-    tools:context="com.andrognito.flashbardemo.KotlinSampleActivity">
+    android:gravity="center"
+    tools:context=".SampleFragment">
 
     <Button
-        android:id="@+id/show"
+        android:id="@+id/fragmentShow"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Show" />
+        android:text="Fragment Show" />
 
     <Button
-        android:id="@+id/dismiss"
+        android:id="@+id/fragmentDismiss"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Dismiss" />
+        android:text="Fragment Dismiss" />
 
-    <fragment
-        android:id="@+id/sample_fragment"
-        class="com.andrognito.flashbardemo.SampleFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
 
 </LinearLayout>
