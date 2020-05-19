@@ -17,6 +17,6 @@ android {
 dependencies {
     implementation project(':flashbar')
 
-    implementation "com.android.support:appcompat-v7:$versions.supportVersion"
+    implementation "androidx.appcompat:appcompat:$versions.supportVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$versions.kotlin"
 }

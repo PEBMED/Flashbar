@@ -7,7 +7,7 @@ import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator.INFINITE
 import android.animation.ValueAnimator.REVERSE
 import android.content.Context
-import android.support.annotation.InterpolatorRes
+import androidx.annotation.InterpolatorRes
 import android.view.View
 import android.view.animation.Interpolator
 
